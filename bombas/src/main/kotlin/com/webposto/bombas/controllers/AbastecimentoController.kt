@@ -1,62 +1,120 @@
 package com.webposto.bombas.controllers
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.webposto.bombas.dto.AbastecimentoDTO
+import com.webposto.bombas.dto.AtualizarAbastecimentoDTO
+import com.webposto.bombas.dto.DeletarAbastecimentoDTO
+import com.webposto.bombas.mapper.abastecimento.AbastecimentoMapper
 import com.webposto.bombas.models.Abastecimento
 import com.webposto.bombas.repositories.AbastecimentoRepository
-import org.springframework.context.annotation.Bean
+import lombok.Data
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.web.bind.annotation.*
 import java.io.Serializable
+import java.util.Objects
 
 @RestController
-@RequestMapping("abastecimento")
+@RequestMapping("api")
 class AbastecimentoController(
-    private val abastecimentoRepository: AbastecimentoRepository
+    private val abastecimentoRepository: AbastecimentoRepository,
+    private val abastecimentoMapper: AbastecimentoMapper =  AbastecimentoMapper.INSTANCE,
 ) {
 
-    @GetMapping()
-    fun getAll() : List<Abastecimento> {
-     return  abastecimentoRepository.findAll()
+    @GetMapping("abastecimentos")
+    fun getAllAbastecimentos() : List<AbastecimentoDTO> {
+        return abastecimentoRepository.findAll().map(abastecimentoMapper::toDTO).toList()
     }
 
-    @GetMapping("{id}")
-    fun getById(@PathVariable  id:Int) : Abastecimento {
-        return  abastecimentoRepository.getReferenceById(id)
+    @GetMapping("abastecimento")
+    fun getByParamId( @RequestParam id:Int) : AbastecimentoDTO {
+
+        val abastecimento:Abastecimento =  abastecimentoRepository.getReferenceById(id)
+
+        return abastecimentoMapper.toDTO(abastecimento)
+
     }
 
-    @PostMapping("criar")
-    fun putAbastecimento(@RequestBody abastecimento: Abastecimento): ResponseMessage {
+    @GetMapping("abastecimento/{id}")
+    fun getByPathId(@PathVariable id: Int) : AbastecimentoDTO {
+        val abastecimento:Abastecimento =  abastecimentoRepository.getReferenceById(id)
 
-        if(abastecimentoRepository.existsById(abastecimento.controle)){
-            return ResponseMessage( """
-            Objecto ja existe.""".trimIndent())
+        return abastecimentoMapper.toDTO(abastecimento)
+    }
+
+
+    @PostMapping("abastecimento/criar")
+    fun adicionarAbastecimento(@RequestBody abastecimentoDTO: AbastecimentoDTO): ResponseMessage {
+
+        if(abastecimentoRepository.existsById(abastecimentoDTO.controle )){
+            return ResponseMessage("error","para atualizar user o entrypoint /atualizar.")
         }
+
+        val abastecimento: Abastecimento = abastecimentoMapper.toModel(abastecimentoDTO)
 
         abastecimentoRepository.save(abastecimento)
 
-
-        return  ResponseMessage( """Objecto criado com sucesso.""".trimIndent())
-
+        return ResponseMessage("success","abastecimendo criado com sucesso.")
 
     }
 
-    @PostMapping("delete")
-    fun deleteAbastecimento(@RequestBody  id:Int): ResponseMessage {
+    @PostMapping("abastecimento/deletar")
+    fun deleteAbastecimento(@RequestBody deletarAbastecimentoDTO: DeletarAbastecimentoDTO): ResponseMessage {
 
-        if(!abastecimentoRepository.existsById(id)){
-            return ResponseMessage("""Não existe esse abastecimendo no banco de dado.""".trimIndent())
+        if(!abastecimentoRepository.existsById(deletarAbastecimentoDTO.id)){
+            return ResponseMessage("error","esse abastecimendo não existe no banco de dado.")
         }
 
-        abastecimentoRepository.deleteById(id)
+       val imprimir = abastecimentoRepository.findById(deletarAbastecimentoDTO.id)
 
 
-        return  ResponseMessage( """
-            Abastecimento excruido com sucesso.""".trimIndent())
-
+        return if (imprimir.get().imprimiu != null && imprimir.get().imprimiu!!.contains("Y")){
+            abastecimentoRepository.deleteById(imprimir.get().controle)
+            ResponseMessage("success","abastecimendo deletado com sucesso.")
+        }else{
+            ResponseMessage("error","abastecimento não baixado.")
+        }
 
     }
+
+    @PostMapping("abastecimento/atualizar")
+    fun updateAbastecimento(@RequestBody atualizarAbastecimentoDTO: AtualizarAbastecimentoDTO): ResponseMessage {
+
+//        val abastecimento: Abastecimento = abastecimentoMapper.toModel(abastecimentoDTO)
+
+//        if(!(abastecimentoRepository.existsById(atualizarAbastecimentoDTO.id))){
+//            return ResponseMessage("error","esse abastecimendo não existe no banco de dado.")
+//        }
+
+        val abastecimento = abastecimentoRepository.findByIdOrNull(atualizarAbastecimentoDTO.id)
+
+
+        if(abastecimento == null){
+            return ResponseMessage("error","esse abastecimendo não existe no banco de dado.")
+        }
+
+        abastecimentoRepository.save(abastecimento.copy(imprimiu = atualizarAbastecimentoDTO.imprimiu))
+        return ResponseMessage("success","abastecimendo atualizado com sucesso.")
+
+    }
+
+
 
 
 
 }
 
-data class ResponseMessage(val message:String) : Serializable {}
+
+
+data class ResponseMessage(
+
+    val status:String,
+
+    val message:String,
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    val data: Any? = null,
+
+    )  : Serializable
 

@@ -1,13 +1,14 @@
-package com.webposto.bombas.dto.request
+package com.webposto.bombas.dto
 
 
+
+import java.io.Serializable
 import java.math.BigDecimal
 import java.time.LocalDate
 
-
 data class AbastecimentoDTO(
 
-    val controle: Int?,
+    val controle: Int,
 
     val codigoBico: String,
 
@@ -24,6 +25,4 @@ data class AbastecimentoDTO(
     var dataAbst: LocalDate,
 
     var precoUnitario: BigDecimal,
-) {
-
-}
+): Serializable
