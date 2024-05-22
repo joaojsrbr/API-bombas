@@ -3,16 +3,18 @@ package com.webposto.bombas.models
 import jakarta.persistence.*
 import lombok.AllArgsConstructor
 import lombok.Data
+import lombok.NoArgsConstructor
 import java.io.Serializable
 import java.math.BigDecimal
 import java.time.LocalDate
 
 @Entity(name = "abastecimentos")
-data class Abastecimento(
+data class Abastecimento (
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(precision = 10)
-    val controle: Int,
+    val controle: Int = 0,
 
     @Column(name = "bomba", length = 3, precision = 3)
     val codigoBico: String,
@@ -27,7 +29,7 @@ data class Abastecimento(
     val matrFuncionario: String?,
 
     @Column(length = 1, precision = 1)
-    var imprimiu: String?,
+    var imprimiu: String,
 
     @Column(name = "litros", precision = 18, scale = 3)
     var volumeAbst: BigDecimal,
@@ -37,4 +39,5 @@ data class Abastecimento(
 
     @Column(name = "pu", precision = 18, scale = 3)
     var precoUnitario: BigDecimal,
-) : Serializable
+
+)

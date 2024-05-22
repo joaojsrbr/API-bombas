@@ -1,10 +1,12 @@
-package com.webposto.bombas.dto
+package com.webposto.bombas.models.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import lombok.Data
 import java.io.Serializable
 
+@Data
 class AtualizarAbastecimentoDTO(
     @JsonProperty(value = "controle")
     val id:Int,
-    var imprimiu: String,
-) : Serializable
+    var imprimiu: String = "Y",
+)
